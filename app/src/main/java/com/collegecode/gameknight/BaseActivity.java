@@ -22,7 +22,6 @@ public abstract class BaseActivity extends Activity {
 
         setContentView(getLayoutResource());
         toolbar = (Toolbar) findViewById(R.id.toolbar);
-
         if (toolbar != null)
             setActionBar(toolbar);
     }

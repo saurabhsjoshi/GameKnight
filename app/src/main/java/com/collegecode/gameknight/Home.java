@@ -1,7 +1,10 @@
 package com.collegecode.gameknight;
 
 import android.app.Fragment;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -26,19 +29,31 @@ import java.util.List;
 
 
 public class Home extends BaseActivity {
+    boolean isActivie = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(Constants.logTag, "Imma working!");
-        if (savedInstanceState == null) {
+
+        //Check if new user
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
+
+        if(preferences.getBoolean("newUser", true))
+        {
+            startActivity(new Intent(this, NewUser.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
+            isActivie = false;
+            finish();
+        }
+
+        /*if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
-        }
+        }*/
 
-        showBack(false);
-        if(getSinchClient() == null)
+        //showBack(false);
+        if(isActivie && getSinchClient() == null)
             buildClient(getApplicationContext() , new SinchClientListener() {
                 @Override
                 public void onClientStarted(SinchClient sinchClient) {
@@ -129,7 +144,7 @@ public class Home extends BaseActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        getSinchClient().terminate();
+        //getSinchClient().terminate();
     }
 
     /**
