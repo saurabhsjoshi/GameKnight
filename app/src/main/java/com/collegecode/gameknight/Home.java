@@ -1,30 +1,108 @@
 package com.collegecode.gameknight;
 
-import android.app.Activity;
-import android.app.ActionBar;
 import android.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.os.Build;
+import android.widget.Toast;
+
+import com.sinch.android.rtc.ClientRegistration;
+import com.sinch.android.rtc.PushPair;
+import com.sinch.android.rtc.SinchClient;
+import com.sinch.android.rtc.SinchClientListener;
+import com.sinch.android.rtc.SinchError;
+import com.sinch.android.rtc.messaging.Message;
+import com.sinch.android.rtc.messaging.MessageClient;
+import com.sinch.android.rtc.messaging.MessageClientListener;
+import com.sinch.android.rtc.messaging.MessageDeliveryInfo;
+import com.sinch.android.rtc.messaging.MessageFailureInfo;
+import com.sinch.android.rtc.messaging.WritableMessage;
+
+import java.util.List;
 
 
-public class Home extends Activity {
+public class Home extends BaseActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_home);
+        Log.i(Constants.logTag, "Imma working!");
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
+
+        showBack(false);
+        if(getSinchClient() == null)
+            buildClient(getApplicationContext() , new SinchClientListener() {
+                @Override
+                public void onClientStarted(SinchClient sinchClient) {
+                    Log.i(Constants.logTag, "Client started");
+                    //sendMessage();
+                }
+
+                @Override
+                public void onClientStopped(SinchClient sinchClient) {
+                }
+
+                @Override
+                public void onClientFailed(SinchClient sinchClient, SinchError sinchError) {
+                    Log.i(Constants.logTag, sinchError.getMessage());
+                }
+
+                @Override
+                public void onRegistrationCredentialsRequired(SinchClient sinchClient, ClientRegistration clientRegistration) {
+                    Log.i(Constants.logTag, "Creds Req");
+                }
+
+                @Override
+                public void onLogMessage(int i, String s, String s2) {
+
+                }
+            });
+
     }
 
+    private void sendMessage(){
+        MessageClient messageClient = getSinchClient().getMessageClient();
+        messageClient.addMessageClientListener(new MessageClientListener() {
+            @Override
+            public void onIncomingMessage(MessageClient messageClient, Message message) {
+                Toast.makeText(getApplicationContext(), message.getTextBody(), Toast.LENGTH_LONG).show();
+            }
+
+            @Override
+            public void onMessageSent(MessageClient messageClient, Message message, String s) {
+                Log.i(Constants.logTag, "Sent!!");
+            }
+
+            @Override
+            public void onMessageFailed(MessageClient messageClient, Message message, MessageFailureInfo messageFailureInfo) {
+                Log.e(Constants.logTag, messageFailureInfo.getSinchError().getMessage());
+            }
+
+            @Override
+            public void onMessageDelivered(MessageClient messageClient, MessageDeliveryInfo messageDeliveryInfo) {
+            }
+
+            @Override
+            public void onShouldSendPushData(MessageClient messageClient, Message message, List<PushPair> pushPairs) {
+            }
+        });
+        WritableMessage message = new WritableMessage(
+                "Akshit",
+                "Hi Shit");
+        messageClient.send(message);
+    }
+    @Override
+    protected int getLayoutResource() {
+        return R.layout.activity_home;
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -46,6 +124,12 @@ public class Home extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        getSinchClient().terminate();
     }
 
     /**

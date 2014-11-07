@@ -5,5 +5,7 @@
     android:layout_height="wrap_content"
     android:padding="8dp"
     android:title="@string/app_name"
+    android:elevation="2dp"
     android:theme="@android:style/ThemeOverlay.Material.Dark.ActionBar"
+    android:popupTheme="@android:style/ThemeOverlay.Material.Light"
     android:background="@color/colorActionBar"/>
