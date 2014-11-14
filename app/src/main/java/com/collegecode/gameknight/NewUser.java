@@ -6,17 +6,24 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
 import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
+
+import java.util.List;
 
 /**
  * Created by saurabh on 14-11-06.
@@ -151,11 +158,13 @@ public class NewUser extends BaseActivity
 
     private class parseLogin extends AsyncTask<Void, Void, Void>{
         ProgressDialog dialog;
+        private boolean loginSuccess = true;
 
         @Override
         protected void onPreExecute() {
             super.onPreExecute();
             dialog = new ProgressDialog(context);
+            dialog.setMessage("Signing in...");
             dialog.setCancelable(false);
             dialog.show();
         }
@@ -170,19 +179,56 @@ public class NewUser extends BaseActivity
 
                 user.setUsername(username);
                 user.setPassword("PASS");
+                user.put("profilePicture", personPhoto);
                 user.setEmail(email);
+
+                try {
+                    long sequence;
+                    ParseQuery query = ParseUser.getQuery();
+                    List<ParseObject> usrs = query.find();
+                    sequence = Long.parseLong(usrs.get(0).getString("sequence"));
+                    user.put("sequence", Long.toString(++sequence));
+                }catch (Exception e){e.printStackTrace();}
 
                 try {
                     user.signUp();
                 }catch (ParseException e){
-                    if(e.getCode() == ParseException.EMAIL_TAKEN)
-                    {
-                        /* TODO: LOGIN IN PARSE */
+                    e.printStackTrace();
+
+                    /* Check if the user is already signed in */
+                    if(e.getCode() != ParseException.EMAIL_TAKEN)
+                        if(e.getCode() != ParseException.USERNAME_TAKEN)
+                            loginSuccess = false;
+                }
+
+                if(loginSuccess){
+                    try{
+                        ParseUser.logIn(username, "PASS");
+                    }catch (ParseException e){
+                        e.printStackTrace();
+                        loginSuccess = false;
                     }
                 }
+
             }
+            else
+                loginSuccess = false;
 
             return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            super.onPostExecute(aVoid);
+            dialog.dismiss();
+            if(loginSuccess){
+
+                SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+                preferences.edit().putBoolean("newUser", false).commit();
+                startActivity(new Intent(context, Home.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
+            }
+            else
+                Toast.makeText(context, "Log in failed!", Toast.LENGTH_LONG).show();
         }
     }
 }

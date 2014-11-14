@@ -1,6 +1,8 @@
 package com.collegecode.gameknight;
 
 import android.app.Fragment;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -31,11 +33,17 @@ import java.util.List;
 public class Home extends BaseActivity {
     boolean isActivie = true;
 
+    GameKnightApi gka;
+
+    private Context context;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.i(Constants.logTag, "Imma working!");
 
+        context = this;
+        gka = new GameKnightApi();
         //Check if new user
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -45,6 +53,51 @@ public class Home extends BaseActivity {
             isActivie = false;
             finish();
         }
+        else{
+            //showBack(false);
+            if(isActivie && getSinchClient() == null)
+                buildClient(getApplicationContext() , new SinchClientListener() {
+                    @Override
+                    public void onClientStarted(SinchClient sinchClient) {
+                        Log.i(Constants.logTag, "Client started");
+                        //sendMessage();
+                    }
+
+                    @Override
+                    public void onClientStopped(SinchClient sinchClient) {
+                    }
+
+                    @Override
+                    public void onClientFailed(SinchClient sinchClient, SinchError sinchError) {
+                        Log.i(Constants.logTag, sinchError.getMessage());
+                    }
+
+                    @Override
+                    public void onRegistrationCredentialsRequired(SinchClient sinchClient,
+                                                                  final ClientRegistration clientRegistration) {
+                        final ProgressDialog progressDialog = new ProgressDialog(context);
+                        progressDialog.setMessage("Loading...");
+                        progressDialog.setCancelable(false);
+                        progressDialog.show();
+
+                        gka.getAuthorizedSignatureForUser(new GameKnightApi.onTaskCompleted() {
+                            @Override
+                            public void onCompleted(String signature, long sequence, Exception e) {
+                                clientRegistration.register(signature, sequence);
+                                progressDialog.dismiss();
+                            }
+                        });
+
+                    }
+
+                    @Override
+                    public void onLogMessage(int i, String s, String s2) {
+
+                    }
+                });
+
+            sendMessage();
+        }
 
         /*if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
@@ -52,34 +105,7 @@ public class Home extends BaseActivity {
                     .commit();
         }*/
 
-        //showBack(false);
-        if(isActivie && getSinchClient() == null)
-            buildClient(getApplicationContext() , new SinchClientListener() {
-                @Override
-                public void onClientStarted(SinchClient sinchClient) {
-                    Log.i(Constants.logTag, "Client started");
-                    //sendMessage();
-                }
 
-                @Override
-                public void onClientStopped(SinchClient sinchClient) {
-                }
-
-                @Override
-                public void onClientFailed(SinchClient sinchClient, SinchError sinchError) {
-                    Log.i(Constants.logTag, sinchError.getMessage());
-                }
-
-                @Override
-                public void onRegistrationCredentialsRequired(SinchClient sinchClient, ClientRegistration clientRegistration) {
-                    Log.i(Constants.logTag, "Creds Req");
-                }
-
-                @Override
-                public void onLogMessage(int i, String s, String s2) {
-
-                }
-            });
 
     }
 
@@ -110,7 +136,12 @@ public class Home extends BaseActivity {
             }
         });
         WritableMessage message = new WritableMessage(
-                "Akshit",
+                "BattleX",
+                "Hi Shit");
+        messageClient.send(message);
+
+        message = new WritableMessage(
+                "Ssj",
                 "Hi Shit");
         messageClient.send(message);
     }
