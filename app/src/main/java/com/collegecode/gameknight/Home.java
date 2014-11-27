@@ -1,20 +1,24 @@
 package com.collegecode.gameknight;
 
-import android.app.Fragment;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Toast;
 
+import com.collegecode.gameknight.adapters.GameListAdapter;
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseObject;
+import com.parse.ParseQuery;
 import com.sinch.android.rtc.ClientRegistration;
 import com.sinch.android.rtc.PushPair;
 import com.sinch.android.rtc.SinchClient;
@@ -27,6 +31,7 @@ import com.sinch.android.rtc.messaging.MessageDeliveryInfo;
 import com.sinch.android.rtc.messaging.MessageFailureInfo;
 import com.sinch.android.rtc.messaging.WritableMessage;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -34,33 +39,34 @@ public class Home extends BaseActivity {
     boolean isActivie = true;
 
     GameKnightApi gka;
+    private RecyclerView mRecyclerView;
+    private GameListAdapter adapter;
 
     private Context context;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Log.i(Constants.logTag, "Imma working!");
 
         context = this;
         gka = new GameKnightApi();
-        //Check if new user
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
+        /* Check if new user */
+        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(this);
         if(preferences.getBoolean("newUser", true))
         {
             startActivity(new Intent(this, NewUser.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK | Intent.FLAG_ACTIVITY_NEW_TASK));
             isActivie = false;
             finish();
         }
+
+        /* User is signed in, create Sinch Client */
         else{
-            //showBack(false);
             if(isActivie && getSinchClient() == null)
                 buildClient(getApplicationContext() , new SinchClientListener() {
                     @Override
                     public void onClientStarted(SinchClient sinchClient) {
                         Log.i(Constants.logTag, "Client started");
-                        //sendMessage();
                     }
 
                     @Override
@@ -96,17 +102,27 @@ public class Home extends BaseActivity {
                     }
                 });
 
-            sendMessage();
         }
+
+        mRecyclerView = (RecyclerView)findViewById(R.id.list);
+        mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        mRecyclerView.setItemAnimator(new DefaultItemAnimator());
+
+        ParseQuery<ParseObject> query = ParseQuery.getQuery("Games");
+        query.orderByAscending("gameTitle");
+        query.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> parseObjects, ParseException e) {
+                adapter = new GameListAdapter(context, new ArrayList<ParseObject>(parseObjects));
+                mRecyclerView.setAdapter(adapter);
+            }
+        });
 
         /*if (savedInstanceState == null) {
             getFragmentManager().beginTransaction()
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }*/
-
-
-
     }
 
     private void sendMessage(){
@@ -136,7 +152,7 @@ public class Home extends BaseActivity {
             }
         });
         WritableMessage message = new WritableMessage(
-                "BattleX",
+                  "BattleX",
                 "Hi Shit");
         messageClient.send(message);
 
@@ -178,19 +194,5 @@ public class Home extends BaseActivity {
         //getSinchClient().terminate();
     }
 
-    /**
-     * A placeholder fragment containing a simple view.
-     */
-    public static class PlaceholderFragment extends Fragment {
 
-        public PlaceholderFragment() {
-        }
-
-        @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_home, container, false);
-            return rootView;
-        }
-    }
 }

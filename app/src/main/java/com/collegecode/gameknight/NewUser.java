@@ -183,11 +183,12 @@ public class NewUser extends BaseActivity
                 user.setEmail(email);
 
                 try {
-                    long sequence;
+                    int sequence;
                     ParseQuery query = ParseUser.getQuery();
+                    query.orderByDescending("sequence");
                     List<ParseObject> usrs = query.find();
-                    sequence = Long.parseLong(usrs.get(0).getString("sequence"));
-                    user.put("sequence", Long.toString(++sequence));
+                    sequence = Integer.parseInt(usrs.get(0).getString("sequence"));
+                    user.put("sequence", Integer.toString(++sequence));
                 }catch (Exception e){e.printStackTrace();}
 
                 try {
