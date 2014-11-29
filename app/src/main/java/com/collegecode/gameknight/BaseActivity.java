@@ -5,6 +5,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.widget.Toolbar;
 
+import com.collegecode.gameknight.objects.Secrets;
 import com.parse.ParseUser;
 import com.sinch.android.rtc.Sinch;
 import com.sinch.android.rtc.SinchClient;
@@ -17,11 +18,12 @@ public abstract class BaseActivity extends Activity {
 
     //SinchClient
     private static SinchClient sinchClient = null;
+    private Toolbar toolbar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Toolbar toolbar;
+
 
         setContentView(getLayoutResource());
         toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -55,5 +57,13 @@ public abstract class BaseActivity extends Activity {
     protected void showBack(boolean show){
         if(getActionBar() != null)
             getActionBar().setDisplayHomeAsUpEnabled(show);
+    }
+
+    public BaseActivity getBaseActivity(){
+        return this;
+    }
+
+    protected void setTitle(String title){
+        toolbar.setTitle(title);
     }
 }

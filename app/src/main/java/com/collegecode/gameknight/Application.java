@@ -1,5 +1,6 @@
 package com.collegecode.gameknight;
 
+import com.collegecode.gameknight.objects.Secrets;
 import com.parse.Parse;
 
 /**

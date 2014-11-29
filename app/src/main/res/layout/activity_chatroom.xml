@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <include
+        android:id="@+id/toolbar"
+        layout="@layout/toolbar"/>
+
+    <RelativeLayout
+        android:elevation="2dp"
+        android:id="@+id/container"
+        android:layout_width="fill_parent"
+        android:background="@color/colorActionBar"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar">
+
+        <ImageView
+            android:id="@+id/img_game"
+            android:layout_marginTop="15dp"
+            android:layout_marginLeft="15dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:background="@android:color/transparent"
+            android:layout_alignParentTop="true"
+            android:layout_marginBottom="15dp"
+            android:layout_alignParentLeft="true"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:id="@+id/txt_developer"
+            android:layout_marginLeft="10dp"
+            android:layout_toRightOf="@id/img_game"
+            android:text="Dev"
+            android:textSize="13sp"
+            android:textColor="@android:color/white"
+            />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/txt_game"
+            android:layout_marginTop="5dp"
+            android:textSize="20sp"
+            android:textColor="@android:color/white"
+            android:text="Game"
+            android:layout_below="@+id/txt_developer"
+            android:layout_alignLeft="@+id/txt_developer"
+            android:layout_alignStart="@+id/txt_developer" />
+
+        </RelativeLayout>
+
+    <LinearLayout
+        android:focusable="true" android:focusableInTouchMode="true"
+        android:layout_width="0px" android:layout_height="0px"/>
+
+
+    <RelativeLayout
+        android:id="@+id/entryContainer"
+        android:background="#FAFAFA"
+        android:layout_alignParentBottom="true"
+        android:layout_width="fill_parent"
+        android:layout_height="55dp">
+
+        <ImageButton
+            android:id="@+id/btn_send"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+
+            android:layout_marginRight="2dp"
+            android:layout_centerVertical="true"
+            android:background="@android:color/transparent"
+            android:src="@drawable/ic_action_send_now"
+            />
+
+        <EditText
+            android:id="@+id/txt_msg"
+            android:hint="Enter a message"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:nextFocusUp="@id/txt_msg"
+            android:nextFocusLeft="@id/txt_msg"
+            android:layout_toLeftOf="@id/btn_send"
+            android:layout_marginLeft="5dp"
+            android:layout_marginRight="3dp"
+            android:maxLines="5"
+            android:layout_centerVertical="true"/>
+
+    </RelativeLayout>
+
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="wrap_content"
+        android:layout_height="fill_parent"
+        android:layout_below="@id/container"
+        android:layout_above="@id/entryContainer"
+        android:divider="@android:color/transparent"
+        android:dividerHeight="10dp"
+        />
+
+</RelativeLayout>

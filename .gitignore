@@ -4,4 +4,4 @@
 /.idea/libraries
 .DS_Store
 /build
-/app/src/main/java/com/collegecode/gameknight/Secrets.java
+/app/src/main/java/com/collegecode/gameknight/objects/Secrets.java

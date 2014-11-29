@@ -2,6 +2,7 @@ package com.collegecode.gameknight;
 
 import android.os.AsyncTask;
 
+import com.collegecode.gameknight.objects.Secrets;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.parse.codec.binary.Base64;

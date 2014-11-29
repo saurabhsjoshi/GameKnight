@@ -2,4 +2,5 @@
 <resources>
     <color name="colorActionBar">#F44336</color>
     <color name="colorStatusBar">#D32F2F</color>
+    <color name="colorAccent">#2196F3</color>
 </resources>

@@ -3,6 +3,7 @@
     <style name="AppTheme" parent="android:Theme.Material.Light.DarkActionBar">
         <item name="android:colorPrimary">@color/colorActionBar</item>
         <item name="android:colorPrimaryDark">@color/colorStatusBar</item>
+        <item name="android:colorAccent">@color/colorAccent</item>
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowActionBar">false</item>
         <item name="android:windowContentTransitions">true</item>

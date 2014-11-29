@@ -12,9 +12,12 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.collegecode.gameknight.adapters.GameListAdapter;
+import com.collegecode.gameknight.objects.Constants;
+import com.collegecode.gameknight.objects.OnItemClickListener;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
@@ -113,7 +116,14 @@ public class Home extends BaseActivity {
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> parseObjects, ParseException e) {
-                adapter = new GameListAdapter(context, new ArrayList<ParseObject>(parseObjects));
+                adapter = new GameListAdapter(context, new ArrayList<ParseObject>(parseObjects), new OnItemClickListener() {
+                    @Override
+                    public void onClick(View v,Object clickedViewTag) {
+                        ChatRoom.launch(getBaseActivity(),
+                                v.findViewById(R.id.img_game),
+                                ((ParseObject) clickedViewTag).getString("gameCode"));
+                    }
+                });
                 mRecyclerView.setAdapter(adapter);
             }
         });
