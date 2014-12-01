@@ -1,6 +1,8 @@
 package com.collegecode.gameknight;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -10,11 +12,13 @@ import android.support.v4.view.ViewCompat;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.collegecode.gameknight.adapters.ChatRoomListAdapter;
 import com.collegecode.gameknight.objects.Constants;
@@ -58,10 +62,7 @@ public class ChatRoom extends BaseActivity {
     private ImageButton btn_send;
 
     private Context context;
-
-
     private String gameCode;
-
 
     @Override
     protected int getLayoutResource() {
@@ -77,10 +78,38 @@ public class ChatRoom extends BaseActivity {
         listView = (ListView) findViewById(R.id.list);
         gameCode = getIntent().getExtras().getString("gameCode");
 
-
         chatList = new ArrayList<ChatInterface>();
         chatRoomListAdapter = new ChatRoomListAdapter(context, chatList);
         listView.setAdapter(chatRoomListAdapter);
+
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                try{
+                    if(listView.getItemAtPosition(position) instanceof ChatGuest){
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        builder.setItems(R.array.array_dialog, new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int which) {
+                                if(which == 0){
+                                    Intent i = new Intent(context, PrivateChat.class);
+                                    i.putExtra("Sender",
+                                            ((ChatGuest) listView.getItemAtPosition(position)).getSender());
+                                    startActivity(i);
+                                }
+                                else{
+                                    android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
+                                    android.content.ClipData clip = android.content.ClipData.newPlainText("Copied Text",
+                                            ((ChatGuest) listView.getItemAtPosition(position)).getMessage());
+                                    clipboard.setPrimaryClip(clip);
+                                    Toast.makeText(context, "Message copied", Toast.LENGTH_SHORT).show();
+                                }
+                            }
+                        });
+                        builder.show();
+                    }
+                }catch (Exception ignore){}
+            }
+        });
 
         sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has joined the room");
         chatList.add(new ChatSystem(context, "You have joined the room"));
@@ -155,12 +184,12 @@ public class ChatRoom extends BaseActivity {
             @Override
             public void onIncomingMessage(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message) {
                 Message m = GameKnightApi.getMessageFromJSON(message.getTextBody());
-                System.out.println(message.getTextBody());
                 if(m.type.equals("0"))
                     chatList.add(new ChatSystem(context,m.message));
                 else if(m.type.equals("1"))
                     chatList.add(new ChatGuest(context,message.getSenderId(),m.message));
                 chatRoomListAdapter.notifyDataSetChanged();
+                listView.setSelection(chatRoomListAdapter.getCount() - 1);
             }
 
             @Override

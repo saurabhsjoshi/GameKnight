@@ -29,12 +29,16 @@
             android:name=".NewUser"
             android:screenOrientation="portrait"/>
 
-        <activity android:name=".ChatRoom"
-            android:screenOrientation="portrait">
+        <activity android:name=".ChatRoom">
             <meta-data
                 android:name="android.support.PARENT_ACTIVITY"
                 android:value=".Home" />
             </activity>
+        <activity android:name=".PrivateChat">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ChatRoom" />
+        </activity>
     </application>
 
 </manifest>

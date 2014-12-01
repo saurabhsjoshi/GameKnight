@@ -23,6 +23,11 @@ public class ChatRoomListAdapter extends ArrayAdapter<ChatInterface>{
     }
 
     @Override
+    public ChatInterface getItem(int position) {
+        return super.getItem(position);
+    }
+
+    @Override
     public int getViewTypeCount() {
         return ChatTypes.values().length;
     }

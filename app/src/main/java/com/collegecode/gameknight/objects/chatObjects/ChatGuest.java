@@ -20,9 +20,9 @@ import java.util.List;
  * Created by saurabh on 14-11-29.
  */
 public class ChatGuest implements ChatInterface {
-    Context context;
-    String message;
-    String sender;
+    private Context context;
+    private String message;
+    private String sender;
 
     public ChatGuest(Context context,String sender, String message){
         this.context = context;
@@ -57,5 +57,13 @@ public class ChatGuest implements ChatInterface {
         ((TextView)view.findViewById(R.id.txt_me_message)).setText(message);
         ((TextView)view.findViewById(R.id.txt_user)).setText(sender);
         return view;
+    }
+
+    public String getMessage(){
+        return message;
+    }
+
+    public String getSender(){
+        return sender;
     }
 }

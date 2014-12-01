@@ -5,4 +5,9 @@
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
 
+    <!-- Dialog Box Array -->
+    <string-array name="array_dialog">
+        <item>Invite to play</item>
+        <item>Copy text</item>
+    </string-array>
 </resources>
