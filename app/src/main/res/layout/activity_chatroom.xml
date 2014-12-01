@@ -12,19 +12,19 @@
         android:elevation="2dp"
         android:id="@+id/container"
         android:layout_width="fill_parent"
-        android:background="@color/colorActionBar"
         android:layout_height="wrap_content"
+        android:background="@color/colorActionBar"
         android:layout_below="@id/toolbar">
 
         <ImageView
             android:id="@+id/img_game"
-            android:layout_marginTop="15dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginBottom="10dp"
             android:layout_marginLeft="15dp"
             android:layout_width="100dp"
             android:layout_height="100dp"
             android:background="@android:color/transparent"
             android:layout_alignParentTop="true"
-            android:layout_marginBottom="15dp"
             android:layout_alignParentLeft="true"
             />
 
@@ -90,7 +90,6 @@
             android:layout_marginRight="3dp"
             android:maxLines="5"
             android:layout_centerVertical="true"/>
-
     </RelativeLayout>
 
     <ListView

@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import com.collegecode.gameknight.adapters.GameListAdapter;
 import com.collegecode.gameknight.objects.Constants;
@@ -23,16 +22,9 @@ import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.sinch.android.rtc.ClientRegistration;
-import com.sinch.android.rtc.PushPair;
 import com.sinch.android.rtc.SinchClient;
 import com.sinch.android.rtc.SinchClientListener;
 import com.sinch.android.rtc.SinchError;
-import com.sinch.android.rtc.messaging.Message;
-import com.sinch.android.rtc.messaging.MessageClient;
-import com.sinch.android.rtc.messaging.MessageClientListener;
-import com.sinch.android.rtc.messaging.MessageDeliveryInfo;
-import com.sinch.android.rtc.messaging.MessageFailureInfo;
-import com.sinch.android.rtc.messaging.WritableMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,42 +127,6 @@ public class Home extends BaseActivity {
         }*/
     }
 
-    private void sendMessage(){
-        MessageClient messageClient = getSinchClient().getMessageClient();
-        messageClient.addMessageClientListener(new MessageClientListener() {
-            @Override
-            public void onIncomingMessage(MessageClient messageClient, Message message) {
-                Toast.makeText(getApplicationContext(), message.getTextBody(), Toast.LENGTH_LONG).show();
-            }
-
-            @Override
-            public void onMessageSent(MessageClient messageClient, Message message, String s) {
-                Log.i(Constants.logTag, "Sent!!");
-            }
-
-            @Override
-            public void onMessageFailed(MessageClient messageClient, Message message, MessageFailureInfo messageFailureInfo) {
-                Log.e(Constants.logTag, messageFailureInfo.getSinchError().getMessage());
-            }
-
-            @Override
-            public void onMessageDelivered(MessageClient messageClient, MessageDeliveryInfo messageDeliveryInfo) {
-            }
-
-            @Override
-            public void onShouldSendPushData(MessageClient messageClient, Message message, List<PushPair> pushPairs) {
-            }
-        });
-        WritableMessage message = new WritableMessage(
-                  "BattleX",
-                "Hi Shit");
-        messageClient.send(message);
-
-        message = new WritableMessage(
-                "Ssj",
-                "Hi Shit");
-        messageClient.send(message);
-    }
     @Override
     protected int getLayoutResource() {
         return R.layout.activity_home;

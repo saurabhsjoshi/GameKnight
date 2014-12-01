@@ -7,21 +7,33 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
 
 import com.collegecode.gameknight.adapters.ChatRoomListAdapter;
+import com.collegecode.gameknight.objects.Constants;
+import com.collegecode.gameknight.objects.Message;
 import com.collegecode.gameknight.objects.chatObjects.ChatGuest;
 import com.collegecode.gameknight.objects.chatObjects.ChatInterface;
 import com.collegecode.gameknight.objects.chatObjects.ChatMe;
+import com.collegecode.gameknight.objects.chatObjects.ChatSystem;
 import com.parse.FindCallback;
 import com.parse.ParseException;
 import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
+import com.sinch.android.rtc.PushPair;
+import com.sinch.android.rtc.messaging.MessageClient;
+import com.sinch.android.rtc.messaging.MessageClientListener;
+import com.sinch.android.rtc.messaging.MessageDeliveryInfo;
+import com.sinch.android.rtc.messaging.MessageFailureInfo;
+import com.sinch.android.rtc.messaging.WritableMessage;
 import com.squareup.picasso.Picasso;
 
 import java.util.ArrayList;
@@ -37,10 +49,19 @@ public class ChatRoom extends BaseActivity {
     private ChatRoomListAdapter chatRoomListAdapter;
     private ArrayList<ChatInterface> chatList;
 
+    private MessageClient messageClient;
+
     private ImageView img_game;
     private TextView txt_title;
     private TextView txt_dev;
+    private EditText txt_message;
+    private ImageButton btn_send;
+
     private Context context;
+
+
+    private String gameCode;
+
 
     @Override
     protected int getLayoutResource() {
@@ -52,20 +73,18 @@ public class ChatRoom extends BaseActivity {
         super.onCreate(savedInstanceState);
         this.context = this;
         super.setTitle("Chatroom");
-
+        initMessaging();
         listView = (ListView) findViewById(R.id.list);
+        gameCode = getIntent().getExtras().getString("gameCode");
+
 
         chatList = new ArrayList<ChatInterface>();
-        chatList.add(new ChatMe(context, "sup" ));
-        chatList.add(new ChatMe(context, "sup" ));
-        chatList.add(new ChatGuest(context, "sup" ));
-        chatList.add(new ChatMe(context, "sup" ));
-        chatList.add(new ChatGuest(context, "sup" ));
         chatRoomListAdapter = new ChatRoomListAdapter(context, chatList);
         listView.setAdapter(chatRoomListAdapter);
 
+        sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has joined the room");
+        chatList.add(new ChatSystem(context, "You have joined the room"));
 
-        String gameCode = getIntent().getExtras().getString("gameCode");
 
         if(getActionBar() != null)
             getActionBar().setDisplayHomeAsUpEnabled(true);
@@ -73,7 +92,15 @@ public class ChatRoom extends BaseActivity {
         img_game = (ImageView) findViewById(R.id.img_game);
         txt_title = (TextView) findViewById(R.id.txt_game);
         txt_dev = (TextView) findViewById(R.id.txt_developer);
+        btn_send = (ImageButton) findViewById(R.id.btn_send);
+        txt_message = (EditText) findViewById(R.id.txt_msg);
 
+        btn_send.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sendUserMessage();
+            }
+        });
         //Set users current Room
         ParseUser.getCurrentUser().put("currentRoom", gameCode);
         ParseUser.getCurrentUser().saveInBackground();
@@ -94,6 +121,99 @@ public class ChatRoom extends BaseActivity {
         });
         ViewCompat.setTransitionName(img_game, EXTRA_IMAGE);
 
+    }
+
+    private void sendSystemMessage(String message){
+        final Message msg = new Message("0", message);
+        GameKnightApi.getAllUsersInRoom(gameCode, new GameKnightApi.onParseRequestCompleted() {
+            @Override
+            public void onCompleted(Object result, ParseException exception) {
+                sendMessage(((ArrayList<String>)result),GameKnightApi.createJSONMessage(msg));
+            }
+        });
+
+    }
+
+    private void sendUserMessage(){
+        String m =  txt_message.getText().toString().trim();
+        if(m.length() != 0){
+            final Message msg = new Message("1",m);
+            txt_message.setText("");
+            GameKnightApi.getAllUsersInRoom(gameCode, new GameKnightApi.onParseRequestCompleted() {
+                @Override
+                public void onCompleted(Object result, ParseException exception) {
+                    sendMessage(((ArrayList<String>)result),GameKnightApi.createJSONMessage(msg));
+                    chatList.add(new ChatMe(context, msg.message));
+                }
+            });
+        }
+    }
+
+    private void initMessaging(){
+        messageClient = getSinchClient().getMessageClient();
+        messageClient.addMessageClientListener(new MessageClientListener() {
+            @Override
+            public void onIncomingMessage(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message) {
+                Message m = GameKnightApi.getMessageFromJSON(message.getTextBody());
+                System.out.println(message.getTextBody());
+                if(m.type.equals("0"))
+                    chatList.add(new ChatSystem(context,m.message));
+                else if(m.type.equals("1"))
+                    chatList.add(new ChatGuest(context,message.getSenderId(),m.message));
+                chatRoomListAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onMessageSent(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message, String s) {
+                Log.i(Constants.logTag, "Sent!!");
+            }
+
+            @Override
+            public void onMessageFailed(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message, MessageFailureInfo messageFailureInfo) {
+                Log.e(Constants.logTag, messageFailureInfo.getSinchError().getMessage());
+            }
+
+            @Override
+            public void onMessageDelivered(MessageClient messageClient, MessageDeliveryInfo messageDeliveryInfo) {
+            }
+
+            @Override
+            public void onShouldSendPushData(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message, List<PushPair> pushPairs) {
+            }
+        });
+    }
+
+    private void sendMessage(List<String> recipients, String message){
+        if(recipients.size() != 0){
+            WritableMessage msg = new WritableMessage(recipients, message);
+            messageClient.send(msg);
+        }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //User left room
+        sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has left the room");
+        ParseUser.getCurrentUser().put("currentRoom", "0");
+        ParseUser.getCurrentUser().saveInBackground();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //User paused activity
+        ParseUser.getCurrentUser().put("currentRoom", "0");
+        ParseUser.getCurrentUser().saveInBackground();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //User back in activity
+        ParseUser.getCurrentUser().put("currentRoom", gameCode);
+        ParseUser.getCurrentUser().saveInBackground();
     }
 
     @Override

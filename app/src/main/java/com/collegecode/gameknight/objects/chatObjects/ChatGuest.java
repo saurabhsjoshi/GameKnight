@@ -8,8 +8,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.collegecode.gameknight.R;
+import com.parse.FindCallback;
+import com.parse.ParseException;
+import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.squareup.picasso.Picasso;
+
+import java.util.List;
 
 /**
  * Created by saurabh on 14-11-29.
@@ -17,10 +22,12 @@ import com.squareup.picasso.Picasso;
 public class ChatGuest implements ChatInterface {
     Context context;
     String message;
+    String sender;
 
-    public ChatGuest(Context context, String message){
+    public ChatGuest(Context context,String sender, String message){
         this.context = context;
         this.message = message;
+        this.sender = sender;
     }
 
     @Override
@@ -37,9 +44,18 @@ public class ChatGuest implements ChatInterface {
         else
             view = convertView;
 
-        ImageView img = (ImageView) view.findViewById(R.id.img_dp);
-        Picasso.with(context).load(ParseUser.getCurrentUser().getString("profilePicture")).into(img);
+        final ImageView img = (ImageView) view.findViewById(R.id.img_dp);
+        ParseQuery<ParseUser> query = ParseUser.getQuery();
+        query.whereEqualTo("username", sender);
+        query.findInBackground(new FindCallback<ParseUser>() {
+            @Override
+            public void done(List<ParseUser> parseUsers, ParseException e) {
+                Picasso.with(context).load(parseUsers.get(0).getString("profilePicture")).into(img);
+            }
+        });
+
         ((TextView)view.findViewById(R.id.txt_me_message)).setText(message);
+        ((TextView)view.findViewById(R.id.txt_user)).setText(sender);
         return view;
     }
 }
