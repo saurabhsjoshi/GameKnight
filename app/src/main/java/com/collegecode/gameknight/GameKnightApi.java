@@ -70,7 +70,6 @@ public class GameKnightApi {
                 for(int i = 0; i < parseUsers.size(); i++){
                     lst.add(parseUsers.get(i).getString("username"));
                 }
-                System.out.println("Got " + parseUsers.size());
                 listener.onCompleted(lst, e);
             }
         });

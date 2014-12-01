@@ -18,6 +18,7 @@ import com.collegecode.gameknight.objects.Constants;
 import com.collegecode.gameknight.objects.Message;
 import com.collegecode.gameknight.objects.chatObjects.ChatGuest;
 import com.collegecode.gameknight.objects.chatObjects.ChatInterface;
+import com.collegecode.gameknight.objects.chatObjects.ChatMe;
 import com.collegecode.gameknight.objects.chatObjects.ChatSystem;
 import com.parse.FindCallback;
 import com.parse.ParseException;
@@ -158,6 +159,7 @@ public class PrivateChat extends BaseActivity {
             final Message msg = new Message("1",m);
             txt_message.setText("");
             sendMessage(sender, GameKnightApi.createJSONMessage(msg));
+            chatList.add(new ChatMe(context, msg.message));
         }
     }
 
@@ -177,5 +179,12 @@ public class PrivateChat extends BaseActivity {
                 return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //User left room
+        sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has left the room");
     }
 }

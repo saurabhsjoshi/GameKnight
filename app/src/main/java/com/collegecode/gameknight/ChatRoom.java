@@ -1,6 +1,7 @@
 package com.collegecode.gameknight;
 
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -64,6 +65,9 @@ public class ChatRoom extends BaseActivity {
     private Context context;
     private String gameCode;
 
+    private ProgressDialog requestDialog;
+    private String requestSender;
+
     @Override
     protected int getLayoutResource() {
         return R.layout.activity_chatroom;
@@ -91,10 +95,12 @@ public class ChatRoom extends BaseActivity {
                         builder.setItems(R.array.array_dialog, new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 if(which == 0){
-                                    Intent i = new Intent(context, PrivateChat.class);
-                                    i.putExtra("Sender",
-                                            ((ChatGuest) listView.getItemAtPosition(position)).getSender());
-                                    startActivity(i);
+                                    requestDialog = new ProgressDialog(context);
+                                    requestDialog.setMessage("Waiting for player");
+                                    requestDialog.setCancelable(false);
+                                    requestDialog.show();
+                                    requestSender = ((ChatGuest) listView.getItemAtPosition(position)).getSender();
+                                    sendPlayRequset("2", requestSender);
                                 }
                                 else{
                                     android.content.ClipboardManager clipboard = (android.content.ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
@@ -160,7 +166,6 @@ public class ChatRoom extends BaseActivity {
                 sendMessage(((ArrayList<String>)result),GameKnightApi.createJSONMessage(msg));
             }
         });
-
     }
 
     private void sendUserMessage(){
@@ -178,16 +183,68 @@ public class ChatRoom extends BaseActivity {
         }
     }
 
+    private void sendPlayRequset(String type, String user){
+        final Message msg = new Message(type, ParseUser.getCurrentUser().getUsername());
+        WritableMessage message = new WritableMessage(user, GameKnightApi.createJSONMessage(msg));
+        messageClient.send(message);
+    }
+
     private void initMessaging(){
         messageClient = getSinchClient().getMessageClient();
         messageClient.addMessageClientListener(new MessageClientListener() {
             @Override
             public void onIncomingMessage(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message) {
-                Message m = GameKnightApi.getMessageFromJSON(message.getTextBody());
+                final Message m = GameKnightApi.getMessageFromJSON(message.getTextBody());
+
                 if(m.type.equals("0"))
                     chatList.add(new ChatSystem(context,m.message));
+
                 else if(m.type.equals("1"))
                     chatList.add(new ChatGuest(context,message.getSenderId(),m.message));
+
+                else if(m.type.equals("2")){
+                    try{
+                        /* Request from user recieved */
+                        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+                        builder
+                                .setTitle("Request to play")
+                                .setMessage("Do you want to play with " + m.message)
+                                .setIcon(android.R.drawable.ic_dialog_alert)
+                                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sendPlayRequset("3", m.message);
+                                        Intent i = new Intent(context, PrivateChat.class);
+                                        i.putExtra("Sender",m.message);
+                                        startActivity(i);
+                                    }
+                                })
+                                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                                    public void onClick(DialogInterface dialog, int which) {
+                                        sendPlayRequset("4", m.message);
+                                    }
+                                })
+                                .show();
+                    }catch (Exception ignore){}
+
+                }
+
+                /* Request accepted */
+                else if(m.type.equals("3")){
+                    if(requestDialog != null && requestDialog.isShowing())
+                        requestDialog.dismiss();
+                    Intent i = new Intent(context, PrivateChat.class);
+                    i.putExtra("Sender",requestSender);
+                    startActivity(i);
+                }
+
+                /* Request denied */
+                else if(m.type.equals("4")){
+                    if(requestDialog.isShowing())
+                        requestDialog.dismiss();
+
+                    Toast.makeText(context, "User denied your request", Toast.LENGTH_SHORT).show();
+                }
+
                 chatRoomListAdapter.notifyDataSetChanged();
                 listView.setSelection(chatRoomListAdapter.getCount() - 1);
             }
@@ -240,6 +297,7 @@ public class ChatRoom extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        context = this;
         //User back in activity
         ParseUser.getCurrentUser().put("currentRoom", gameCode);
         ParseUser.getCurrentUser().saveInBackground();
