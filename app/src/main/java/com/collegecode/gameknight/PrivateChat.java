@@ -1,7 +1,12 @@
 package com.collegecode.gameknight;
 
+import android.app.ProgressDialog;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
 import android.view.Menu;
@@ -51,6 +56,13 @@ public class PrivateChat extends BaseActivity {
     private Context context;
     private String sender;
 
+    private ProgressDialog progressDialog;
+
+    private CallService callService;
+    private Intent callIntent;
+
+    private ServiceConnection callServiceConnection;
+
     @Override
     protected int getLayoutResource() {
         return R.layout.activity_chatroom;
@@ -61,6 +73,11 @@ public class PrivateChat extends BaseActivity {
         super.onCreate(savedInstanceState);
         super.setTitle("Private Chat");
         super.showBack(true);
+
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage("Loading..");
+        progressDialog.show();
+        connectToService();
 
         TextView txt_title, txt_dev;
         ImageButton  btn_send;
@@ -177,14 +194,44 @@ public class PrivateChat extends BaseActivity {
             case android.R.id.home:
                 NavUtils.navigateUpFromSameTask(this);
                 return true;
+
+            case R.id.action_call:
+                callService.makeCall(sender);
+                return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void connectToService(){
+        callServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName name, IBinder service) {
+                CallService.CallBinder binder = (CallService.CallBinder) service;
+                callService = binder.getService();
+                if(progressDialog != null && progressDialog.isShowing())
+                    progressDialog.dismiss();
+                callService.setCallClient(getSinchClient());
+            }
+
+            @Override
+            public void onServiceDisconnected(ComponentName name) {
+
+            }
+        };
+
+        if(callIntent == null){
+            callIntent = new Intent(this, CallService.class);
+            bindService(callIntent, callServiceConnection, Context.BIND_AUTO_CREATE);
+            //callIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
+            startService(callIntent);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         //User left room
+        unbindService(callServiceConnection);
         sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has left the room");
     }
 }
