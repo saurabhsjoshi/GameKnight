@@ -196,7 +196,7 @@ public class PrivateChat extends BaseActivity {
                 return true;
 
             case R.id.action_call:
-                callService.makeCall(sender);
+                callService.makeCall();
                 return true;
         }
         return super.onOptionsItemSelected(item);
@@ -210,7 +210,7 @@ public class PrivateChat extends BaseActivity {
                 callService = binder.getService();
                 if(progressDialog != null && progressDialog.isShowing())
                     progressDialog.dismiss();
-                callService.setCallClient(getSinchClient());
+                callService.setCallClient(getSinchClient(), sender, context);
             }
 
             @Override
@@ -232,6 +232,7 @@ public class PrivateChat extends BaseActivity {
         super.onDestroy();
         //User left room
         unbindService(callServiceConnection);
+        stopService(callIntent);
         sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has left the room");
     }
 }
