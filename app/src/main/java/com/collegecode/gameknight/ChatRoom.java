@@ -5,6 +5,9 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -67,6 +70,7 @@ public class ChatRoom extends BaseActivity {
 
     private ProgressDialog requestDialog;
     private String requestSender;
+    private ParseObject game;
 
     @Override
     protected int getLayoutResource() {
@@ -79,6 +83,7 @@ public class ChatRoom extends BaseActivity {
         this.context = this;
         super.setTitle("Chatroom");
         initMessaging();
+
         listView = (ListView) findViewById(R.id.list);
         gameCode = getIntent().getExtras().getString("gameCode");
 
@@ -129,7 +134,7 @@ public class ChatRoom extends BaseActivity {
         txt_dev = (TextView) findViewById(R.id.txt_developer);
         btn_send = (ImageButton) findViewById(R.id.btn_send);
         txt_message = (EditText) findViewById(R.id.txt_msg);
-
+        ViewCompat.setTransitionName(img_game, EXTRA_IMAGE);
         btn_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -145,17 +150,17 @@ public class ChatRoom extends BaseActivity {
         query.findInBackground(new FindCallback<ParseObject>() {
             @Override
             public void done(List<ParseObject> parseObjects, ParseException e) {
-                ParseObject game = parseObjects.get(0);
+                game = parseObjects.get(0);
                 txt_title.setText(game.getString("gameTitle"));
                 txt_dev.setText(game.getString("developer"));
                 Picasso.with(context)
                         .load(game.getString("gameImage"))
                         .fit()
                         .into(img_game);
+                if(!checkIfGameExists(game.getString("packageName")))
+                    showInstallGameDialog();
             }
         });
-        ViewCompat.setTransitionName(img_game, EXTRA_IMAGE);
-
     }
 
     private void sendSystemMessage(String message){
@@ -195,10 +200,10 @@ public class ChatRoom extends BaseActivity {
             @Override
             public void onIncomingMessage(MessageClient messageClient, com.sinch.android.rtc.messaging.Message message) {
                 final Message m = GameKnightApi.getMessageFromJSON(message.getTextBody());
-
+                /* System Message */
                 if(m.type.equals("0"))
                     chatList.add(new ChatSystem(context,m.message));
-
+                /* Normal user message */
                 else if(m.type.equals("1"))
                     chatList.add(new ChatGuest(context,message.getSenderId(),m.message));
 
@@ -214,6 +219,7 @@ public class ChatRoom extends BaseActivity {
                                     public void onClick(DialogInterface dialog, int which) {
                                         sendPlayRequset("3", m.message);
                                         Intent i = new Intent(context, PrivateChat.class);
+                                        i.putExtra("gameCode", gameCode);
                                         i.putExtra("Sender",m.message);
                                         startActivity(i);
                                     }
@@ -234,6 +240,7 @@ public class ChatRoom extends BaseActivity {
                         requestDialog.dismiss();
                     Intent i = new Intent(context, PrivateChat.class);
                     i.putExtra("Sender",requestSender);
+                    i.putExtra("gameCode", gameCode);
                     startActivity(i);
                 }
 
@@ -269,6 +276,31 @@ public class ChatRoom extends BaseActivity {
         });
     }
 
+    private void showInstallGameDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+                .setMessage("Do you want to install the game from Play Store?")
+                .setTitle("Game not found")
+                .setCancelable(false)
+                .setPositiveButton("Install", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String packageName = game.getString("packageName");
+                        try {
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName)));
+                        } catch (android.content.ActivityNotFoundException anfe) {
+                            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + packageName)));
+                        }
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        NavUtils.navigateUpFromSameTask((ChatRoom)context);
+                    }
+                });
+        builder.create().show();
+    }
+
     private void sendMessage(List<String> recipients, String message){
         if(recipients.size() != 0){
             WritableMessage msg = new WritableMessage(recipients, message);
@@ -276,6 +308,10 @@ public class ChatRoom extends BaseActivity {
         }
     }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+    }
 
     @Override
     protected void onDestroy() {
@@ -301,6 +337,16 @@ public class ChatRoom extends BaseActivity {
         //User back in activity
         ParseUser.getCurrentUser().put("currentRoom", gameCode);
         ParseUser.getCurrentUser().saveInBackground();
+    }
+
+    public boolean checkIfGameExists(String targetPackage){
+        PackageManager pm=getPackageManager();
+        try{
+            PackageInfo info=pm.getPackageInfo(targetPackage,PackageManager.GET_META_DATA);
+        } catch (PackageManager.NameNotFoundException e) {
+            return false;
+        }
+        return true;
     }
 
     @Override

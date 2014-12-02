@@ -27,6 +27,7 @@ import com.collegecode.gameknight.objects.chatObjects.ChatMe;
 import com.collegecode.gameknight.objects.chatObjects.ChatSystem;
 import com.parse.FindCallback;
 import com.parse.ParseException;
+import com.parse.ParseObject;
 import com.parse.ParseQuery;
 import com.parse.ParseUser;
 import com.sinch.android.rtc.PushPair;
@@ -49,13 +50,15 @@ public class PrivateChat extends BaseActivity {
     private ArrayList<ChatInterface> chatList;
 
     private MessageClient messageClient;
-
+    private boolean isInGame = false;
     private ImageView img_game;
     private EditText txt_message;
 
     private Context context;
     private String sender;
 
+    private String gameCode;
+    private ParseObject game;
     private ProgressDialog progressDialog;
 
     private CallService callService;
@@ -73,7 +76,7 @@ public class PrivateChat extends BaseActivity {
         super.onCreate(savedInstanceState);
         super.setTitle("Private Chat");
         super.showBack(true);
-
+        gameCode = getIntent().getStringExtra("gameCode");
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Loading..");
         progressDialog.show();
@@ -106,6 +109,15 @@ public class PrivateChat extends BaseActivity {
             @Override
             public void done(List<ParseUser> parseUsers, ParseException e) {
                 Picasso.with(context).load(parseUsers.get(0).getString("profilePicture")).into(img_game);
+            }
+        });
+
+        ParseQuery<ParseObject> query2 = ParseQuery.getQuery("Games");
+        query2.whereEqualTo("gameCode", gameCode);
+        query2.findInBackground(new FindCallback<ParseObject>() {
+            @Override
+            public void done(List<ParseObject> parseObjects, ParseException e) {
+                game = parseObjects.get(0);
             }
         });
 
@@ -198,6 +210,11 @@ public class PrivateChat extends BaseActivity {
             case R.id.action_call:
                 callService.makeCall();
                 return true;
+            case R.id.action_play:
+                isInGame = true;
+                startActivity(getPackageManager().getLaunchIntentForPackage(game.getString("packageName")));
+                sendSystemMessage(sender + " is in the game");
+                return true;
         }
         return super.onOptionsItemSelected(item);
     }
@@ -222,7 +239,6 @@ public class PrivateChat extends BaseActivity {
         if(callIntent == null){
             callIntent = new Intent(this, CallService.class);
             bindService(callIntent, callServiceConnection, Context.BIND_AUTO_CREATE);
-            //callIntent.setAction(Constants.ACTION.STARTFOREGROUND_ACTION);
             startService(callIntent);
         }
     }
@@ -234,5 +250,12 @@ public class PrivateChat extends BaseActivity {
         unbindService(callServiceConnection);
         stopService(callIntent);
         sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has left the room");
+    }
+
+    @Override
+    protected void onResume() {
+        if(isInGame)
+            sendSystemMessage(sender + " has returned from the game.");
+        super.onResume();
     }
 }
