@@ -213,7 +213,7 @@ public class PrivateChat extends BaseActivity {
             case R.id.action_play:
                 isInGame = true;
                 startActivity(getPackageManager().getLaunchIntentForPackage(game.getString("packageName")));
-                sendSystemMessage(sender + " is in the game");
+                sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " is in the game");
                 return true;
         }
         return super.onOptionsItemSelected(item);

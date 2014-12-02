@@ -9,6 +9,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v4.app.NavUtils;
@@ -134,7 +135,6 @@ public class ChatRoom extends BaseActivity {
         txt_dev = (TextView) findViewById(R.id.txt_developer);
         btn_send = (ImageButton) findViewById(R.id.btn_send);
         txt_message = (EditText) findViewById(R.id.txt_msg);
-        ViewCompat.setTransitionName(img_game, EXTRA_IMAGE);
         btn_send.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -159,8 +159,10 @@ public class ChatRoom extends BaseActivity {
                         .into(img_game);
                 if(!checkIfGameExists(game.getString("packageName")))
                     showInstallGameDialog();
+
             }
         });
+        ViewCompat.setTransitionName(img_game, EXTRA_IMAGE);
     }
 
     private void sendSystemMessage(String message){
@@ -246,7 +248,7 @@ public class ChatRoom extends BaseActivity {
 
                 /* Request denied */
                 else if(m.type.equals("4")){
-                    if(requestDialog.isShowing())
+                    if(requestDialog != null && requestDialog.isShowing())
                         requestDialog.dismiss();
 
                     Toast.makeText(context, "User denied your request", Toast.LENGTH_SHORT).show();
@@ -277,19 +279,21 @@ public class ChatRoom extends BaseActivity {
     }
 
     private void showInstallGameDialog(){
-        AlertDialog.Builder builder = new AlertDialog.Builder(this)
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this)
                 .setMessage("Do you want to install the game from Play Store?")
                 .setTitle("Game not found")
                 .setCancelable(false)
                 .setPositiveButton("Install", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
+                        NavUtils.navigateUpFromSameTask((ChatRoom)context);
                         String packageName = game.getString("packageName");
                         try {
                             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=" + packageName)));
                         } catch (android.content.ActivityNotFoundException anfe) {
                             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("http://play.google.com/store/apps/details?id=" + packageName)));
                         }
+
                     }
                 })
                 .setNegativeButton("No", new DialogInterface.OnClickListener() {
@@ -298,13 +302,23 @@ public class ChatRoom extends BaseActivity {
                         NavUtils.navigateUpFromSameTask((ChatRoom)context);
                     }
                 });
-        builder.create().show();
+
+        final Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                builder.create().show();
+            }
+        }, 1000);
+
     }
 
     private void sendMessage(List<String> recipients, String message){
         if(recipients.size() != 0){
             WritableMessage msg = new WritableMessage(recipients, message);
             messageClient.send(msg);
+            chatRoomListAdapter.notifyDataSetChanged();
+            listView.setSelection(chatRoomListAdapter.getCount() - 1);
         }
     }
 
