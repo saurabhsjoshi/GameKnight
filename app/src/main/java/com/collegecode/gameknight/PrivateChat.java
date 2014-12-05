@@ -175,11 +175,15 @@ public class PrivateChat extends BaseActivity {
     private void sendMessage(String recipients, String message){
         WritableMessage msg = new WritableMessage(recipients, message);
         messageClient.send(msg);
+        chatRoomListAdapter.notifyDataSetChanged();
+        listView.setSelection(chatRoomListAdapter.getCount() - 1);
     }
 
     private void sendSystemMessage(String message){
         final Message msg = new Message("0", message);
         sendMessage(sender, GameKnightApi.createJSONMessage(msg));
+        chatRoomListAdapter.notifyDataSetChanged();
+        listView.setSelection(chatRoomListAdapter.getCount() - 1);
     }
 
     private void sendUserMessage(){
@@ -255,7 +259,7 @@ public class PrivateChat extends BaseActivity {
     @Override
     protected void onResume() {
         if(isInGame)
-            sendSystemMessage(sender + " has returned from the game.");
+            sendSystemMessage(ParseUser.getCurrentUser().getUsername() + " has returned from the game.");
         super.onResume();
     }
 }
